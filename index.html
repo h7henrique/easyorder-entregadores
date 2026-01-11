@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EasyMoto Financeiro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { background: #121212; color: white; font-family: 'Inter', sans-serif; margin: 0; padding: 15px; }
+        
+        /* HEADER FINANCEIRO DUPLO */
+        .finance-header { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; 
+        }
+        .box-finance { 
+            background: #1e1e1e; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #333; 
+        }
+        .label { font-size: 0.75rem; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; }
+        .value { font-size: 1.4rem; font-weight: 900; display: block; margin-top: 5px; }
+        
+        .ganho-moto { color: #22c55e; } /* Verde para o ganho dele */
+        .dev-restaurante { color: #ef4444; } /* Vermelho para o que ele deve devolver */
+
+        h3 { border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; font-size: 0.9rem; text-transform: uppercase; color: #888; }
+
+        .card { background: #1e1e1e; border: 1px solid #333; border-radius: 10px; margin-bottom: 20px; overflow: hidden; }
+        
+        /* FAIXAS DE STATUS */
+        .pag-cobrar { background: #ef4444; color: white; padding: 8px; text-align: center; font-weight: bold; font-size: 1rem; }
+        .pag-ok { background: #22c55e; color: white; padding: 8px; text-align: center; font-weight: bold; font-size: 1rem; }
+        
+        .body { padding: 15px; }
+        .cliente { font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; display: block; }
+        .endereco { font-size: 1rem; color: #ccc; margin-bottom: 15px; line-height: 1.4; }
+        
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn { padding: 12px; border-radius: 8px; border: none; color: white; cursor: pointer; font-weight: bold; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .waze { background: #0ea5e9; }
+        .zap { background: #25D366; }
+        .finish { background: #22c55e; grid-column: span 2; margin-top: 10px; font-size: 1.1rem; padding: 15px; }
+    </style>
+</head>
+<body>
+
+    <div class="finance-header">
+        <div class="box-finance">
+            <span class="label">Minha Diária</span>
+            <span class="value ganho-moto" id="meu-lucro">R$ 0,00</span>
+            <small style="color:#666; font-size:0.7rem" id="cont-entregas">0 entregas</small>
+        </div>
+        <div class="box-finance">
+            <span class="label">Prestar Conta</span>
+            <span class="value dev-restaurante" id="divida-caixa">R$ 0,00</span>
+            <small style="color:#666; font-size:0.7rem">Só dinheiro vivo</small>
+        </div>
+    </div>
+
+    <h3>🚀 Entregas Pendentes (Em Rota)</h3>
+    <div id="lista">
+        <div style="text-align:center; padding:30px; color:#555">
+            <i class="fa-solid fa-motorcycle" style="font-size:2rem; margin-bottom:10px"></i><br>
+            Aguardando pedidos...
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // === CONFIGURAÇÃO DO PAGAMENTO ===
+        const TAXA_POR_ENTREGA = 7.00; // <--- Mude aqui o valor da taxa do motoboy!
+        
+        const db = supabase.createClient('https://tyokrmmtluixdosmmygf.supabase.co', 'sb_publishable_xm_hnVYyfmh4mONa2Hy-7A_3M9M0ftf');
+
+        // Atualiza assim que abrir
+        init();
+
+        function init() {
+            carregar();
+            db.channel('moto-financeiro').on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, () => {
+                carregar();
+            }).subscribe();
+        }
+
+        async function carregar() {
+            const hoje = new Date().toISOString().split('T')[0];
+            
+            // 1. Busca PENDENTES (Em Rota) - Para montar a lista
+            const { data: rotas } = await db.from('pedidos')
+                .select('*')
+                .eq('status', 'em_rota')
+                .order('created_at', {ascending: true});
+            
+            // 2. Busca FINALIZADOS (Hoje) - Para calcular o dinheiro
+            const { data: feitos } = await db.from('pedidos')
+                .select('*')
+                .eq('status', 'entregue')
+                .gte('created_at', hoje);
+
+            // --- RENDERIZA LISTA DE ENTREGAS ---
+            const lista = document.getElementById('lista');
+            
+            if(rotas && rotas.length > 0) {
+                lista.innerHTML = ''; 
+                rotas.forEach(p => {
+                    // Verifica se é para cobrar dinheiro na mão
+                    const isDinheiro = p.metodo_pag.toLowerCase().includes('dinheiro');
+                    
+                    const faixa = !isDinheiro
+                        ? `<div class="pag-ok">✅ JÁ PAGO (${p.metodo_pag})</div>`
+                        : `<div class="pag-cobrar">💰 COBRAR: R$ ${p.total.toFixed(2)}</div>`;
+                    
+                    const enderecoEnc = encodeURIComponent(p.endereco + ", Araraquara"); 
+
+                    lista.innerHTML += `
+                        <div class="card">
+                            ${faixa}
+                            <div class="body">
+                                <span class="cliente">#${p.id} - ${p.cliente_nome}</span>
+                                <div class="endereco">${p.endereco}</div>
+                                <div class="btn-group">
+                                    <a href="https://waze.com/ul?q=${enderecoEnc}&navigate=yes" target="_blank" class="btn waze"><i class="fa-brands fa-waze"></i> WAZE</a>
+                                    <a href="https://wa.me/55${p.cliente_zap}" target="_blank" class="btn zap"><i class="fa-brands fa-whatsapp"></i> ZAP</a>
+                                    <button class="btn finish" onclick="finalizar(${p.id})">ENTREGUE <i class="fa-solid fa-check"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                lista.innerHTML = '<div style="text-align:center; padding:30px; color:#555"><i class="fa-solid fa-check-circle"></i><br>Tudo entregue!</div>';
+            }
+
+            // --- CÁLCULOS FINANCEIROS ---
+            let meuLucro = 0;
+            let devoRestaurante = 0;
+            let qtdEntregas = 0;
+
+            if(feitos) {
+                qtdEntregas = feitos.length;
+                meuLucro = qtdEntregas * TAXA_POR_ENTREGA; // Conta simples: Qtd x Valor Fixo
+
+                feitos.forEach(f => {
+                    // Só soma no "Prestar Conta" se foi pago em Dinheiro
+                    if(f.metodo_pag.toLowerCase().includes('dinheiro')) {
+                        devoRestaurante += f.total;
+                    }
+                });
+            }
+
+            // Atualiza a tela
+            document.getElementById('meu-lucro').innerText = `R$ ${meuLucro.toFixed(2)}`;
+            document.getElementById('cont-entregas').innerText = `${qtdEntregas} entregas hoje`;
+            
+            document.getElementById('divida-caixa').innerText = `R$ ${devoRestaurante.toFixed(2)}`;
+        }
+
+        async function finalizar(id) {
+            if(confirm('Já entregou e recebeu?')) {
+                await db.from('pedidos').update({ status: 'entregue' }).eq('id', id);
+            }
+        }
+    </script>
+</body>
+</html>
