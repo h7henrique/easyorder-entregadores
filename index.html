@@ -2,161 +2,434 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyMoto Financeiro</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EasyMoto RED</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        body { background: #121212; color: white; font-family: 'Inter', sans-serif; margin: 0; padding: 15px; }
-        
-        /* HEADER FINANCEIRO DUPLO */
-        .finance-header { 
-            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; 
+        /* === TEMA RED & BLACK === */
+        :root {
+            --bg-app: #050505;       /* Preto quase absoluto */
+            --surface: #141414;      /* Cinza muito escuro */
+            --surface-light: #1f1f1f;
+            --primary-red: #FF1F1F;  /* O Vermelho Ferrari/Neon */
+            --primary-glow: rgba(255, 31, 31, 0.3);
+            --green: #00e676;
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --border: #333333;
         }
-        .box-finance { 
-            background: #1e1e1e; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #333; 
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            background-color: var(--bg-app); 
+            color: var(--text-main); 
+            padding-bottom: 100px; /* Espaço para não cortar conteúdo no fim */
         }
-        .label { font-size: 0.75rem; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; }
-        .value { font-size: 1.4rem; font-weight: 900; display: block; margin-top: 5px; }
-        
-        .ganho-moto { color: #22c55e; } /* Verde para o ganho dele */
-        .dev-restaurante { color: #ef4444; } /* Vermelho para o que ele deve devolver */
 
-        h3 { border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; font-size: 0.9rem; text-transform: uppercase; color: #888; }
+        /* === CUSTOM TOAST (Notificação) === */
+        #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; width: 90%; max-width: 400px; text-align: center; }
+        .toast { background: rgba(30, 30, 30, 0.95); border: 1px solid var(--primary-red); color: white; padding: 12px 20px; border-radius: 50px; margin-bottom: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.5); font-weight: 600; font-size: 0.9rem; animation: slideDown 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px; backdrop-filter: blur(5px); }
+        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        .card { background: #1e1e1e; border: 1px solid #333; border-radius: 10px; margin-bottom: 20px; overflow: hidden; }
+        /* === HEADER === */
+        header { 
+            background: rgba(5, 5, 5, 0.9); 
+            backdrop-filter: blur(10px);
+            padding: 15px 20px; 
+            position: sticky; top: 0; z-index: 100;
+            display: flex; justify-content: space-between; align-items: center; 
+            border-bottom: 1px solid #222;
+        }
+        .user-profile { display: flex; align-items: center; gap: 12px; }
+        .avatar { 
+            width: 42px; height: 42px; 
+            background: linear-gradient(135deg, #333, #111); 
+            border: 2px solid var(--primary-red); 
+            border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            font-weight: 800; font-size: 1.1rem; color: var(--primary-red);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+        .user-name { font-weight: 700; font-size: 1rem; letter-spacing: -0.5px; }
         
-        /* FAIXAS DE STATUS */
-        .pag-cobrar { background: #ef4444; color: white; padding: 8px; text-align: center; font-weight: bold; font-size: 1rem; }
-        .pag-ok { background: #22c55e; color: white; padding: 8px; text-align: center; font-weight: bold; font-size: 1rem; }
+        .status-dot { width: 8px; height: 8px; background-color: var(--green); border-radius: 50%; display: inline-block; margin-right: 5px; box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+        .user-status { font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; margin-top: 2px; }
         
-        .body { padding: 15px; }
-        .cliente { font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; display: block; }
-        .endereco { font-size: 1rem; color: #ccc; margin-bottom: 15px; line-height: 1.4; }
+        .btn-logout { background: #1a1a1a; border: none; color: #666; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .btn-logout:active { background: #333; color: white; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* === DASHBOARD METRICS === */
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px; }
+        .stat-card { 
+            background: var(--surface); 
+            padding: 15px; 
+            border-radius: 16px; 
+            border: 1px solid #222; 
+            position: relative; overflow: hidden;
+        }
+        /* Efeito decorativo no card */
+        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: #333; }
+        .stat-card.gain::before { background: var(--green); }
+        .stat-card.debt::before { background: var(--primary-red); }
+
+        .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 1px; margin-bottom: 5px; }
+        .stat-value { font-size: 1.6rem; font-weight: 800; letter-spacing: -1px; }
+        .val-green { color: var(--green); text-shadow: 0 0 20px rgba(0, 230, 118, 0.2); }
+        .val-red { color: var(--primary-red); text-shadow: 0 0 20px rgba(255, 31, 31, 0.2); }
+
+        /* === TABS === */
+        .tabs-wrapper { padding: 0 20px 10px 20px; position: sticky; top: 73px; z-index: 90; background: var(--bg-app); }
+        .tabs { display: flex; background: #111; border-radius: 12px; padding: 5px; border: 1px solid #222; }
+        .tab { 
+            flex: 1; text-align: center; padding: 10px; border-radius: 8px; 
+            font-weight: 700; font-size: 0.85rem; color: #555; 
+            cursor: pointer; transition: all 0.3s ease; 
+        }
+        .tab.active { 
+            background: var(--primary-red); 
+            color: white; 
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+        .badge { 
+            background: white; color: black; padding: 1px 6px; border-radius: 6px; 
+            font-size: 0.7rem; margin-left: 6px; font-weight: 800; vertical-align: middle; 
+        }
+
+        /* === LISTAS & CARDS === */
+        .list-container { padding: 10px 20px; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { 
+            background: var(--surface); 
+            border-radius: 18px; 
+            margin-bottom: 20px; 
+            border: 1px solid #222; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+            position: relative;
+        }
         
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn { padding: 12px; border-radius: 8px; border: none; color: white; cursor: pointer; font-weight: bold; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 5px; }
-        .waze { background: #0ea5e9; }
-        .zap { background: #25D366; }
-        .finish { background: #22c55e; grid-column: span 2; margin-top: 10px; font-size: 1.1rem; padding: 15px; }
+        .card-head { 
+            padding: 15px 20px; 
+            background: var(--surface-light); 
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #222;
+        }
+        .card-id { font-weight: 800; color: #fff; font-size: 0.9rem; opacity: 0.7; }
+        .card-price { font-weight: 800; color: var(--green); font-size: 1.1rem; }
+
+        .card-body { padding: 20px; }
+        .client-name { font-size: 1.2rem; font-weight: 700; color: white; margin-bottom: 5px; }
+        
+        .info-row { display: flex; align-items: flex-start; gap: 12px; margin-top: 15px; color: #ccc; font-size: 0.9rem; line-height: 1.5; }
+        .icon-box { 
+            width: 24px; min-width: 24px; height: 24px; 
+            background: #222; border-radius: 6px; 
+            display: flex; align-items: center; justify-content: center; 
+            color: var(--primary-red); font-size: 0.8rem;
+        }
+
+        /* === BOTÕES === */
+        .btn-full { 
+            width: 100%; padding: 18px; border: none; 
+            font-weight: 800; font-size: 0.95rem; cursor: pointer; 
+            text-transform: uppercase; letter-spacing: 1px; 
+            transition: 0.2s; 
+        }
+        
+        .btn-accept { 
+            background: var(--primary-red); color: white; 
+            box-shadow: 0 -4px 20px rgba(255, 31, 31, 0.15);
+        }
+        .btn-accept:active { transform: scale(0.98); filter: brightness(0.8); }
+
+        .btn-finish { 
+            background: var(--green); color: #000; 
+            border-radius: 12px; margin-top: 15px;
+            box-shadow: 0 4px 15px rgba(0, 230, 118, 0.3);
+        }
+
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
+        .btn-icon { 
+            padding: 14px; border-radius: 12px; border: none; 
+            font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; 
+            text-decoration: none; color: white; font-size: 0.9rem; 
+            transition: transform 0.2s;
+        }
+        .btn-icon:active { transform: scale(0.95); }
+        
+        .btn-waze { background: #0E2938; color: #33ccff; border: 1px solid rgba(51, 204, 255, 0.2); }
+        .btn-zap { background: #0c2e18; color: #25D366; border: 1px solid rgba(37, 211, 102, 0.2); }
+        
+        .alert-money { 
+            background: rgba(255, 31, 31, 0.1); 
+            color: var(--primary-red); 
+            padding: 12px; border-radius: 10px; 
+            text-align: center; font-weight: 700; 
+            border: 1px solid rgba(255, 31, 31, 0.3); 
+            margin-top: 15px; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        
+        .alert-ok { 
+            background: rgba(0, 230, 118, 0.1); color: var(--green); padding: 12px; border-radius: 10px; text-align: center; font-size: 0.85rem; margin-top: 15px; border: 1px solid rgba(0, 230, 118, 0.2); font-weight: 600;
+        }
+
+        /* Helpers */
+        .hidden { display: none !important; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #444; }
+        .empty-state i { font-size: 3rem; margin-bottom: 15px; opacity: 0.5; }
+        .red-text { color: var(--primary-red); }
+
+        /* MODAL LOGIN */
+        #modal-login { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 30px; }
+        .login-input { background: #111; border: 1px solid #333; color: white; padding: 18px; width: 100%; max-width: 320px; text-align: center; border-radius: 12px; font-size: 1.1rem; margin-bottom: 20px; outline: none; transition: 0.3s; }
+        .login-input:focus { border-color: var(--primary-red); box-shadow: 0 0 15px var(--primary-glow); }
     </style>
 </head>
 <body>
 
-    <div class="finance-header">
-        <div class="box-finance">
-            <span class="label">Minha Diária</span>
-            <span class="value ganho-moto" id="meu-lucro">R$ 0,00</span>
-            <small style="color:#666; font-size:0.7rem" id="cont-entregas">0 entregas</small>
+    <div id="toast-container"></div>
+
+    <div id="modal-login" class="hidden">
+        <div style="font-size:4rem; margin-bottom:20px; filter: drop-shadow(0 0 10px red);">⚡</div>
+        <h2 style="color:white; margin-bottom:5px; text-transform:uppercase; letter-spacing:2px">EasyMoto <span class="red-text">RED</span></h2>
+        <p style="color:#666; margin-bottom:30px">Identifique-se para rodar</p>
+        <input type="text" id="input-nome" class="login-input" placeholder="Seu Nome de Guerra">
+        <button onclick="salvarNome()" class="btn-full btn-accept" style="border-radius:12px; max-width:320px">ACESSAR SISTEMA</button>
+    </div>
+
+    <header>
+        <div class="user-profile">
+            <div class="avatar"><i class="fa-solid fa-bolt"></i></div>
+            <div>
+                <div class="user-name" id="user-display">...</div>
+                <div class="user-status"><span class="status-dot"></span> Online</div>
+            </div>
         </div>
-        <div class="box-finance">
-            <span class="label">Prestar Conta</span>
-            <span class="value dev-restaurante" id="divida-caixa">R$ 0,00</span>
-            <small style="color:#666; font-size:0.7rem">Só dinheiro vivo</small>
+        <button class="btn-logout" onclick="sair()"><i class="fa-solid fa-power-off"></i></button>
+    </header>
+
+    <div class="dashboard">
+        <div class="stat-card gain">
+            <div class="stat-label">Ganho Hoje</div>
+            <div class="stat-value val-green" id="ganho-hoje">R$ 0,00</div>
+        </div>
+        <div class="stat-card debt">
+            <div class="stat-label">Devendo Caixa</div>
+            <div class="stat-value val-red" id="devendo-caixa">R$ 0,00</div>
         </div>
     </div>
 
-    <h3>🚀 Entregas Pendentes (Em Rota)</h3>
-    <div id="lista">
-        <div style="text-align:center; padding:30px; color:#555">
-            <i class="fa-solid fa-motorcycle" style="font-size:2rem; margin-bottom:10px"></i><br>
-            Aguardando pedidos...
+    <div class="tabs-wrapper">
+        <div class="tabs">
+            <div class="tab active" onclick="trocarAba('livres')" id="tab-livres">
+                PISTA <span class="badge" id="badge-livres">0</span>
+            </div>
+            <div class="tab" onclick="trocarAba('minhas')" id="tab-minhas">
+                NA MOCHILA <span class="badge" id="badge-minhas">0</span>
+            </div>
         </div>
     </div>
+
+    <div id="lista-livres" class="list-container"></div>
+    <div id="lista-minhas" class="list-container hidden"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // === CONFIGURAÇÃO DO PAGAMENTO ===
-        const TAXA_POR_ENTREGA = 7.00; // <--- Mude aqui o valor da taxa do motoboy!
+        const TAXA_FIXA = 7.00; 
+        const SUPABASE_URL = 'https://tyokrmmtluixdosmmygf.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_xm_hnVYyfmh4mONa2Hy-7A_3M9M0ftf';
+        const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
-        const db = supabase.createClient('https://tyokrmmtluixdosmmygf.supabase.co', 'sb_publishable_xm_hnVYyfmh4mONa2Hy-7A_3M9M0ftf');
+        // Som de alerta futurista
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'); 
 
-        // Atualiza assim que abrir
-        init();
+        let MEU_NOME = localStorage.getItem('easy_moto_user_v2');
 
-        function init() {
-            carregar();
-            db.channel('moto-financeiro').on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, () => {
-                carregar();
+        // === SISTEMA DE NOTIFICAÇÃO (TOAST) ===
+        function showToast(msg, type='info') {
+            const container = document.getElementById('toast-container');
+            const el = document.createElement('div');
+            el.className = 'toast';
+            let icon = type === 'success' ? '✅' : '⚡';
+            el.innerHTML = `<span>${icon}</span> ${msg}`;
+            container.appendChild(el);
+            setTimeout(() => { el.style.opacity = '0'; setTimeout(()=>el.remove(), 300) }, 3000);
+        }
+
+        // INICIALIZAÇÃO
+        if(!MEU_NOME) {
+            document.getElementById('modal-login').classList.remove('hidden');
+        } else {
+            initApp();
+        }
+
+        function salvarNome() {
+            const nome = document.getElementById('input-nome').value.trim();
+            if(nome) {
+                localStorage.setItem('easy_moto_user_v2', nome);
+                MEU_NOME = nome;
+                document.getElementById('modal-login').style.display = 'none';
+                initApp();
+            } else showToast("Digite seu nome!", "error");
+        }
+
+        function sair() {
+            if(confirm("Deslogar do sistema?")) {
+                localStorage.removeItem('easy_moto_user_v2');
+                location.reload();
+            }
+        }
+
+        function initApp() {
+            document.getElementById('user-display').innerText = MEU_NOME;
+            carregarDados();
+
+            db.channel('moto-v5-test').on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, payload => {
+                if(payload.eventType === 'INSERT' || (payload.eventType === 'UPDATE' && payload.new.status === 'em_rota')) {
+                    audio.play().catch(e=>{});
+                    if(navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                    showToast("NOVA CORRIDA NA ÁREA!", "info");
+                }
+                carregarDados();
             }).subscribe();
         }
 
-        async function carregar() {
+        async function carregarDados() {
             const hoje = new Date().toISOString().split('T')[0];
-            
-            // 1. Busca PENDENTES (Em Rota) - Para montar a lista
-            const { data: rotas } = await db.from('pedidos')
-                .select('*')
-                .eq('status', 'em_rota')
-                .order('created_at', {ascending: true});
-            
-            // 2. Busca FINALIZADOS (Hoje) - Para calcular o dinheiro
-            const { data: feitos } = await db.from('pedidos')
-                .select('*')
-                .eq('status', 'entregue')
-                .gte('created_at', hoje);
 
-            // --- RENDERIZA LISTA DE ENTREGAS ---
-            const lista = document.getElementById('lista');
-            
-            if(rotas && rotas.length > 0) {
-                lista.innerHTML = ''; 
-                rotas.forEach(p => {
-                    // Verifica se é para cobrar dinheiro na mão
-                    const isDinheiro = p.metodo_pag.toLowerCase().includes('dinheiro');
-                    
-                    const faixa = !isDinheiro
-                        ? `<div class="pag-ok">✅ JÁ PAGO (${p.metodo_pag})</div>`
-                        : `<div class="pag-cobrar">💰 COBRAR: R$ ${p.total.toFixed(2)}</div>`;
-                    
-                    const enderecoEnc = encodeURIComponent(p.endereco + ", Araraquara"); 
+            // Busca Otimizada
+            const { data: livres } = await db.from('pedidos').select('*').eq('status', 'em_rota').is('entregador', null);
+            const { data: minhas } = await db.from('pedidos').select('*').eq('status', 'em_rota').eq('entregador', MEU_NOME);
+            const { data: feitas } = await db.from('pedidos').select('*').eq('status', 'entregue').eq('entregador', MEU_NOME).gte('created_at', hoje);
 
-                    lista.innerHTML += `
-                        <div class="card">
-                            ${faixa}
-                            <div class="body">
-                                <span class="cliente">#${p.id} - ${p.cliente_nome}</span>
-                                <div class="endereco">${p.endereco}</div>
-                                <div class="btn-group">
-                                    <a href="https://waze.com/ul?q=${enderecoEnc}&navigate=yes" target="_blank" class="btn waze"><i class="fa-brands fa-waze"></i> WAZE</a>
-                                    <a href="https://wa.me/55${p.cliente_zap}" target="_blank" class="btn zap"><i class="fa-brands fa-whatsapp"></i> ZAP</a>
-                                    <button class="btn finish" onclick="finalizar(${p.id})">ENTREGUE <i class="fa-solid fa-check"></i></button>
-                                </div>
+            renderLivres(livres || []);
+            renderMinhas(minhas || []);
+            calcularStats(feitas || []);
+        }
+
+        function renderLivres(lista) {
+            const div = document.getElementById('lista-livres');
+            const badge = document.getElementById('badge-livres');
+            badge.innerText = lista.length;
+            
+            // Visual do Badge muda se tiver corrida
+            if(lista.length > 0) {
+                badge.style.background = 'var(--primary-red)';
+                badge.style.color = 'white';
+            } else {
+                badge.style.background = 'white';
+                badge.style.color = 'black';
+            }
+
+            if(lista.length === 0) {
+                div.innerHTML = `<div class="empty-state"><i class="fa-solid fa-radar"></i><br>Buscando corridas na região...</div>`; return;
+            }
+
+            div.innerHTML = '';
+            lista.forEach(p => {
+                div.innerHTML += `
+                    <div class="card" style="border-left: 4px solid var(--primary-red)">
+                        <div class="card-head">
+                            <div class="card-id">#${p.id} • ${p.created_at.substring(11,16)}</div>
+                            <div class="card-price">R$ ${TAXA_FIXA.toFixed(2)}</div>
+                        </div>
+                        <div class="card-body">
+                            <div class="client-name">${p.cliente_nome}</div>
+                            <div class="info-row">
+                                <div class="icon-box"><i class="fa-solid fa-map-pin"></i></div>
+                                <div>${p.endereco}</div>
                             </div>
                         </div>
-                    `;
-                });
-            } else {
-                lista.innerHTML = '<div style="text-align:center; padding:30px; color:#555"><i class="fa-solid fa-check-circle"></i><br>Tudo entregue!</div>';
+                        <button class="btn-full btn-accept" onclick="pegarCorrida(${p.id})">PEGAR CORRIDA <i class="fa-solid fa-bolt"></i></button>
+                    </div>`;
+            });
+        }
+
+        function renderMinhas(lista) {
+            const div = document.getElementById('lista-minhas');
+            document.getElementById('badge-minhas').innerText = lista.length;
+
+            if(lista.length === 0) {
+                div.innerHTML = `<div class="empty-state"><i class="fa-solid fa-motorcycle"></i><br>Sua mochila está vazia.</div>`; return;
             }
 
-            // --- CÁLCULOS FINANCEIROS ---
-            let meuLucro = 0;
-            let devoRestaurante = 0;
-            let qtdEntregas = 0;
+            div.innerHTML = '';
+            lista.forEach(p => {
+                const isDin = p.metodo_pag.toLowerCase().includes('dinheiro');
+                const alerta = isDin 
+                    ? `<div class="alert-money"><i class="fa-solid fa-hand-holding-dollar"></i> COBRAR: R$ ${p.total.toFixed(2)}</div>` 
+                    : `<div class="alert-ok"><i class="fa-solid fa-check-circle"></i> PAGO ONLINE</div>`;
+                const zap = p.cliente_zap ? p.cliente_zap.replace(/\D/g, '') : '';
 
-            if(feitos) {
-                qtdEntregas = feitos.length;
-                meuLucro = qtdEntregas * TAXA_POR_ENTREGA; // Conta simples: Qtd x Valor Fixo
+                div.innerHTML += `
+                    <div class="card" style="border-left: 4px solid var(--green)">
+                        <div class="card-head"><div class="card-id">#${p.id} • EM ANDAMENTO</div></div>
+                        <div class="card-body">
+                            <div class="client-name">${p.cliente_nome}</div>
+                            <div class="info-row" style="margin-bottom:15px">
+                                <div class="icon-box"><i class="fa-solid fa-location-arrow"></i></div>
+                                <div style="font-size:1.05rem; color:white">${p.endereco}</div>
+                            </div>
+                            
+                            ${alerta}
 
-                feitos.forEach(f => {
-                    // Só soma no "Prestar Conta" se foi pago em Dinheiro
-                    if(f.metodo_pag.toLowerCase().includes('dinheiro')) {
-                        devoRestaurante += f.total;
-                    }
-                });
-            }
+                            <div class="action-grid">
+                                <a href="https://waze.com/ul?q=${encodeURIComponent(p.endereco + " Araraquara")}&navigate=yes" target="_blank" class="btn-icon btn-waze"><i class="fa-brands fa-waze"></i> NAVEGAR</a>
+                                <a href="https://wa.me/55${zap}?text=Olá, o entregador está a caminho!" target="_blank" class="btn-icon btn-zap"><i class="fa-brands fa-whatsapp"></i> AVISAR</a>
+                            </div>
+                            <button class="btn-full btn-finish" onclick="finalizar(${p.id})">FINALIZAR ENTREGA</button>
+                        </div>
+                    </div>`;
+            });
+        }
 
-            // Atualiza a tela
-            document.getElementById('meu-lucro').innerText = `R$ ${meuLucro.toFixed(2)}`;
-            document.getElementById('cont-entregas').innerText = `${qtdEntregas} entregas hoje`;
+        async function pegarCorrida(id) {
+            // Efeito visual imediato para feedback rápido
+            showToast("Tentando pegar corrida...", "info");
             
-            document.getElementById('divida-caixa').innerText = `R$ ${devoRestaurante.toFixed(2)}`;
+            const { data } = await db.from('pedidos').select('entregador').eq('id', id).single();
+            if(data && data.entregador) {
+                showToast("Vixi! Outro já pegou.", "error");
+                carregarDados();
+                return;
+            }
+            await db.from('pedidos').update({ entregador: MEU_NOME }).eq('id', id);
+            showToast("Corrida é sua! Vai pra cima 🚀", "success");
+            trocarAba('minhas');
         }
 
         async function finalizar(id) {
-            if(confirm('Já entregou e recebeu?')) {
+            if(confirm("Finalizar entrega e liberar saldo?")) {
                 await db.from('pedidos').update({ status: 'entregue' }).eq('id', id);
+                showToast("Entrega finalizada! 💰", "success");
+            }
+        }
+
+        function calcularStats(lista) {
+            const ganho = lista.length * TAXA_FIXA;
+            let caixa = 0;
+            lista.forEach(p => { if(p.metodo_pag.toLowerCase().includes('dinheiro')) caixa += p.total; });
+            document.getElementById('ganho-hoje').innerText = `R$ ${ganho.toFixed(2)}`;
+            document.getElementById('devendo-caixa').innerText = `R$ ${caixa.toFixed(2)}`;
+        }
+
+        function trocarAba(aba) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('lista-livres').classList.add('hidden');
+            document.getElementById('lista-minhas').classList.add('hidden');
+            if(aba === 'livres') {
+                document.getElementById('tab-livres').classList.add('active');
+                document.getElementById('lista-livres').classList.remove('hidden');
+            } else {
+                document.getElementById('tab-minhas').classList.add('active');
+                document.getElementById('lista-minhas').classList.remove('hidden');
             }
         }
     </script>
